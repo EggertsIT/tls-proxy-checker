@@ -19,7 +19,7 @@ Standalone release binaries include Python and all Python dependencies. Python
 is not required on the target system.
 
 ```bash
-VERSION=0.4.0
+VERSION=0.4.1
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz"
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS
@@ -28,10 +28,11 @@ sudo install -m 0755 tls-proxy-checker /usr/local/bin/tls-proxy-checker
 tls-proxy-checker --version
 ```
 
-The Linux x86-64 build targets glibc 2.34 or newer. Every release includes a
+The Linux x86-64 build requires glibc 2.35 or newer. Every release includes a
 checksum file, build metadata, a GLIBC symbol report, a CycloneDX SBOM, and a
-GitHub artifact attestation. With the GitHub CLI installed, provenance can be
-verified before installation:
+GitHub artifact attestation. `BUILDINFO.json` records the audited requirement
+for that exact build. With the GitHub CLI installed, provenance can be verified
+before installation:
 
 ```bash
 gh attestation verify "tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz" \
@@ -76,8 +77,8 @@ files are replaced atomically after the complete report is ready.
 
 ## Inspection Profiles
 
-Version 0.4.0 includes the `zscaler-zia` profile, based on Zscaler's documented
-proxy-to-server protocol and cipher support:
+Current releases include the `zscaler-zia` profile, based on Zscaler's
+documented proxy-to-server protocol and cipher support:
 
 ```bash
 tls-proxy-checker example.com --profile zscaler-zia
@@ -151,9 +152,9 @@ artifact attestation, and GitHub Release creation. The tag must match both
 version declarations.
 
 ```bash
-python scripts/verify_release_version.py v0.4.0
-git tag -s v0.4.0
-git push origin v0.4.0
+python scripts/verify_release_version.py v0.4.1
+git tag -s v0.4.1
+git push origin v0.4.1
 ```
 
 ## License

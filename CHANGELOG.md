@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-13
+
+### Fixed
+
+- Corrected the documented minimum GLIBC version for GitHub-built Linux
+  binaries from 2.34 to the audited requirement of 2.35.
+- Added a release gate that fails if bundled ELF files require a newer GLIBC
+  version than the documented compatibility floor.
+
 ## [0.4.0] - 2026-07-13
 
 ### Changed
@@ -29,5 +38,6 @@ All notable changes to this project are documented here. The project follows
 - Cipher entries use `profile_status` instead of `zscaler_status`.
 - The mTLS finding ID is now `TLS-PROXY-MTLS-ENFORCED`.
 
-[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/EggertsIT/tls-proxy-checker/releases/tag/v0.4.0

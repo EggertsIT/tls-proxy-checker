@@ -62,7 +62,7 @@ jobs:
           install -m 0755 dist/tls-proxy-checker release-assets/package/tls-proxy-checker
           cp README.md CHANGELOG.md LICENSE NOTICE THIRD_PARTY_NOTICES.md release-assets/package/
           python scripts/collect_licenses.py release-assets/package/licenses
-          python scripts/check_glibc.py dist-audit/tls-proxy-checker-audit --json > release-assets/glibc-requirements.json
+          python scripts/check_glibc.py dist-audit/tls-proxy-checker-audit --maximum 2.35 --json > release-assets/glibc-requirements.json
           python -m pip_audit --format cyclonedx-json --output release-assets/tls-proxy-checker-${GITHUB_REF_NAME#v}.sbom.cdx.json
           python scripts/build_release_metadata.py \
             --binary release-assets/tls-proxy-checker-linux-x86_64 \
