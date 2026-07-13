@@ -28,6 +28,9 @@ python -m build
   reports, or endpoint data.
 - Changes to an inspection profile must cite primary vendor documentation,
   update its review date, and include profile contract tests.
+- Follow the field definitions, cipher-name rules, and verification checklist
+  in [Inspection Profiles](docs/inspection-profiles.md) when adding or
+  modifying a profile.
 - Live BadSSL checks supplement the deterministic test suite; they are not a
   substitute for local tests because remote endpoints can change.
 

@@ -25,6 +25,25 @@ jobs:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      - name: Verify signed release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_ref="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}")"
+          object_type="$(printf '%s' "${tag_ref}" | jq -r '.object.type')"
+          tag_sha="$(printf '%s' "${tag_ref}" | jq -r '.object.sha')"
+          if [[ "${object_type}" != "tag" ]]; then
+            echo "Release tag must be an annotated, signed tag." >&2
+            exit 1
+          fi
+          tag_object="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}")"
+          verified="$(printf '%s' "${tag_object}" | jq -r '.verification.verified')"
+          reason="$(printf '%s' "${tag_object}" | jq -r '.verification.reason')"
+          if [[ "${verified}" != "true" ]]; then
+            echo "GitHub did not verify the release tag signature: ${reason}" >&2
+            exit 1
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:

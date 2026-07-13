@@ -34,7 +34,7 @@ from tls_proxy_checker.cli import (
     run_check,
     validate_cli_paths,
 )
-from tls_proxy_checker.profiles import ZSCALER_ZIA_PROFILE
+from tls_proxy_checker.profiles import INSPECTION_PROFILES, ZSCALER_ZIA_PROFILE
 from tls_proxy_checker.security import (
     analyze_security,
     hostname_matches,
@@ -310,6 +310,32 @@ def test_zscaler_zia_profile_unsupported_cipher_families():
 
     for cipher in unsupported:
         assert cipher_profile_status(cipher, PROFILE) == "not_supported"
+
+
+def test_all_inspection_profiles_follow_contract():
+    seen_names = set()
+    for profile_id, profile in INSPECTION_PROFILES.items():
+        assert profile.id == profile_id
+        assert profile.id == profile.id.lower()
+        assert profile.name not in seen_names
+        seen_names.add(profile.name)
+        assert profile.provider
+        assert profile.source_url.startswith("https://")
+        datetime.date.fromisoformat(profile.reviewed_at)
+        assert profile.tls_versions
+
+        capability_sets = (
+            profile.tls13_pfs,
+            profile.ecdhe_pfs,
+            profile.dhe_pfs,
+            profile.rsa_no_pfs,
+        )
+        combined = set().union(*capability_sets)
+        assert sum(len(items) for items in capability_sets) == len(combined)
+        assert combined == profile.supported_ciphers
+        assert profile.ecdsa_server_side_only <= profile.ecdhe_pfs
+        assert all(name.startswith("TLS_") for name in profile.tls13_pfs)
+        assert all("TLS_" not in name for name in combined - profile.tls13_pfs)
 
 
 def test_cipher_inventory_includes_locally_testable_null_suites():

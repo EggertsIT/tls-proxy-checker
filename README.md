@@ -179,12 +179,18 @@ and the [Changelog](CHANGELOG.md).
 Tagging `vMAJOR.MINOR.PATCH` runs the tests, security checks, dependency audit,
 Linux PyInstaller build, smoke tests, GLIBC audit, SBOM generation, checksums,
 artifact attestation, and GitHub Release creation. The tag must match both
-version declarations.
+version declarations and GitHub must verify its cryptographic signature.
+Register the maintainer's public SSH or GPG key as a signing key in GitHub
+before creating a release tag.
 
 ```bash
-python scripts/verify_release_version.py v0.4.1
-git tag -s v0.4.1
-git push origin v0.4.1
+git config --local gpg.format ssh
+git config --local user.signingkey ~/.ssh/id_ed25519.pub
+git config --local tag.gpgSign true
+VERSION=$(python -c 'from tls_proxy_checker import __version__; print(__version__)')
+python scripts/verify_release_version.py "v${VERSION}"
+git tag -s "v${VERSION}" -m "TLS Proxy Checker ${VERSION}"
+git push origin "v${VERSION}"
 ```
 
 ## License
