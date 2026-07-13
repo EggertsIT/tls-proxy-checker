@@ -181,11 +181,14 @@ Linux PyInstaller build, smoke tests, GLIBC audit, SBOM generation, checksums,
 artifact attestation, and GitHub Release creation. The tag must match both
 version declarations and GitHub must verify its cryptographic signature.
 Register the maintainer's public SSH or GPG key as a signing key in GitHub
-before creating a release tag.
+before creating a release tag. The configured Git email must also be a verified
+address for that GitHub account; the account's GitHub-provided noreply address
+is valid. Otherwise, GitHub reports the signature reason as `no_user`.
 
 ```bash
 git config --local gpg.format ssh
 git config --local user.signingkey ~/.ssh/id_ed25519.pub
+git config --local user.email "YOUR_VERIFIED_GITHUB_EMAIL"
 git config --local tag.gpgSign true
 VERSION=$(python -c 'from tls_proxy_checker import __version__; print(__version__)')
 python scripts/verify_release_version.py "v${VERSION}"
