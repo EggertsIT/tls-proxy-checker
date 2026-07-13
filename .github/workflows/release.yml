@@ -1,0 +1,88 @@
+name: Release
+
+"on":
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux-x86-64:
+    name: Linux x86-64
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[dev,build]"
+
+      - name: Verify release version
+        run: python scripts/verify_release_version.py "${GITHUB_REF_NAME}"
+
+      - name: Run release gates
+        run: |
+          python -m pytest -q
+          python -m bandit -q -r src scripts
+          python -m pip_audit
+
+      - name: Build standalone binary
+        run: |
+          make build
+          make build-audit
+
+      - name: Smoke-test standalone binary
+        run: |
+          ./dist/tls-proxy-checker --version
+          ./dist/tls-proxy-checker --help > /dev/null
+
+      - name: Assemble release assets
+        run: |
+          mkdir -p release-assets/package
+          install -m 0755 dist/tls-proxy-checker release-assets/tls-proxy-checker-linux-x86_64
+          install -m 0755 dist/tls-proxy-checker release-assets/package/tls-proxy-checker
+          cp README.md CHANGELOG.md LICENSE NOTICE THIRD_PARTY_NOTICES.md release-assets/package/
+          python scripts/collect_licenses.py release-assets/package/licenses
+          python scripts/check_glibc.py dist-audit/tls-proxy-checker-audit --json > release-assets/glibc-requirements.json
+          python -m pip_audit --format cyclonedx-json --output release-assets/tls-proxy-checker-${GITHUB_REF_NAME#v}.sbom.cdx.json
+          python scripts/build_release_metadata.py \
+            --binary release-assets/tls-proxy-checker-linux-x86_64 \
+            --glibc-report release-assets/glibc-requirements.json \
+            --output release-assets/BUILDINFO.json
+          tar -C release-assets/package -czf release-assets/tls-proxy-checker-${GITHUB_REF_NAME#v}-linux-x86_64.tar.gz .
+          rm -rf release-assets/package
+          cd release-assets
+          sha256sum tls-proxy-checker-linux-x86_64 tls-proxy-checker-*.tar.gz tls-proxy-checker-*.sbom.cdx.json BUILDINFO.json glibc-requirements.json > SHA256SUMS
+
+      - name: Attest release artifacts
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
+        with:
+          subject-checksums: release-assets/SHA256SUMS
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" release-assets/* \
+            --verify-tag \
+            --generate-notes \
+            --title "TLS Proxy Checker ${GITHUB_REF_NAME}"

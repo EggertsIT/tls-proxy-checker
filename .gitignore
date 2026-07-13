@@ -1,0 +1,40 @@
+# Operating-system and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Build and locally generated release output
+build/
+build-audit/
+dist/
+dist-audit/
+release/
+.pyinstaller-cache/
+.pip-audit-cache/
+
+# Local reports
+badssl-verification.json
+badssl-sha1-verification.json
+glibc-requirements.json
+
+# Credentials and local configuration
+.env
+.env.*
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore

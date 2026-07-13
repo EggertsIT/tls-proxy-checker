@@ -1,0 +1,53 @@
+name: Bug report
+description: Report reproducible incorrect behavior or a crash.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include private keys, credentials, or non-public endpoint data.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: tls-proxy-checker 0.4.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: Ubuntu 22.04 x86-64, glibc 2.35
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: Redact private targets and paths while preserving relevant flags.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include sanitized JSON output or a traceback when available.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I removed credentials, private keys, and sensitive endpoint data.
+          required: true
+        - label: I searched existing issues for this behavior.
+          required: true

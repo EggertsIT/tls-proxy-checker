@@ -1,0 +1,43 @@
+name: Incorrect diagnostic result
+description: Report a likely false positive, false negative, or profile mismatch.
+title: "[Diagnostic]: "
+labels:
+  - diagnostic
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: tls-proxy-checker 0.4.0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Result area
+      options:
+        - Certificate finding
+        - Inspection compatibility
+        - Protocol detection
+        - Cipher detection
+        - mTLS detection
+    validations:
+      required: true
+  - type: input
+    id: finding
+    attributes:
+      label: Finding ID or reason code
+      placeholder: TLS-CERT-HOSTNAME or no_supported_cipher_overlap
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Include the relevant JSON section and independent verification.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why the result appears incorrect
+    validations:
+      required: true

@@ -1,0 +1,196 @@
+{
+  "source": "https://badssl.com/",
+  "source_repository": "https://github.com/chromium/badssl.com",
+  "source_revision": "bfc80f7c2bf0873e2fdc9ba79f38a5afd93570fb",
+  "reviewed_at": "2026-07-11",
+  "cases": [
+    {
+      "target": "expired.badssl.com",
+      "category": "certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-EXPIRED"]
+    },
+    {
+      "target": "wrong.host.badssl.com",
+      "category": "certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-HOSTNAME"]
+    },
+    {
+      "target": "self-signed.badssl.com",
+      "category": "certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-SELF-SIGNED", "TLS-CERT-UNTRUSTED"]
+    },
+    {
+      "target": "untrusted-root.badssl.com",
+      "category": "certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-UNTRUSTED"]
+    },
+    {
+      "target": "incomplete-chain.badssl.com",
+      "category": "certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-INCOMPLETE-CHAIN", "TLS-CERT-UNTRUSTED"]
+    },
+    {
+      "target": "no-common-name.badssl.com",
+      "category": "certificate",
+      "coverage": "evidence_only",
+      "scan": "quick",
+      "expected_findings": [],
+      "reason": "A missing Common Name is valid when subjectAltName identifies the service."
+    },
+    {
+      "target": "no-subject.badssl.com",
+      "category": "certificate",
+      "coverage": "evidence_only",
+      "scan": "quick",
+      "expected_findings": [],
+      "reason": "An empty subject can be valid when a critical subjectAltName is present."
+    },
+    {
+      "target": "sha1.badssl.com",
+      "category": "certificate",
+      "coverage": "automated_unstable",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-SIGNATURE-SHA1"],
+      "reason": "BadSSL classifies this endpoint as defunct and its certificate can also be expired."
+    },
+    {
+      "target": "sha1-intermediate.badssl.com",
+      "category": "certificate",
+      "coverage": "automated_unstable",
+      "scan": "quick",
+      "expected_findings": ["TLS-CERT-CHAIN-WEAK-SIGNATURE"],
+      "reason": "BadSSL classifies this endpoint as defunct."
+    },
+    {
+      "target": "revoked.badssl.com",
+      "category": "revocation",
+      "coverage": "planned_online",
+      "reason": "Reliable detection requires validated OCSP or CRL retrieval; browser CRLSets are client policy."
+    },
+    {
+      "target": "no-sct.badssl.com",
+      "category": "certificate_transparency",
+      "coverage": "planned_backend",
+      "reason": "SCTs can be embedded, stapled with OCSP, or delivered as a TLS extension. All channels must be checked."
+    },
+    {
+      "target": "client.badssl.com",
+      "category": "client_certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-PROXY-MTLS-ENFORCED"]
+    },
+    {
+      "target": "client-cert-missing.badssl.com",
+      "category": "client_certificate",
+      "coverage": "automated",
+      "scan": "quick",
+      "expected_findings": ["TLS-PROXY-MTLS-ENFORCED"]
+    },
+    {
+      "target": "cbc.badssl.com",
+      "category": "cipher",
+      "coverage": "automated",
+      "scan": "full",
+      "expected_findings": ["TLS-CIPHER-CBC"]
+    },
+    {
+      "target": "null.badssl.com",
+      "category": "cipher",
+      "coverage": "automated",
+      "scan": "full",
+      "expected_findings": ["TLS-CIPHER-NULL"]
+    },
+    {
+      "target": "static-rsa.badssl.com",
+      "category": "key_exchange",
+      "coverage": "automated",
+      "scan": "full",
+      "expected_findings": ["TLS-CIPHER-NO-PFS"]
+    },
+    {
+      "target": "dh1024.badssl.com",
+      "category": "key_exchange",
+      "coverage": "automated_with_openssl",
+      "scan": "full",
+      "expected_findings": ["TLS-KEX-WEAK-DH"]
+    },
+    {
+      "target": "dh2048.badssl.com",
+      "category": "key_exchange",
+      "coverage": "evidence_only",
+      "scan": "full",
+      "expected_findings": [],
+      "reason": "The 2048-bit DHE group is recorded as evidence and is not itself a finding."
+    },
+    {
+      "target": "dh-small-subgroup.badssl.com",
+      "category": "key_exchange",
+      "coverage": "planned_backend",
+      "reason": "Subgroup validation requires parsing and validating the server's complete DH parameters."
+    },
+    {
+      "target": "dh-composite.badssl.com",
+      "category": "key_exchange",
+      "coverage": "planned_backend",
+      "reason": "Composite-modulus validation requires parsing and primality-testing the server DH modulus."
+    },
+    {
+      "target": "tls-v1-0.badssl.com:1010",
+      "category": "protocol",
+      "coverage": "automated",
+      "scan": "protocol",
+      "expected_findings": ["TLS-PROTOCOL-LEGACY", "TLS-PROTOCOL-NO-MODERN"]
+    },
+    {
+      "target": "tls-v1-1.badssl.com:1011",
+      "category": "protocol",
+      "coverage": "automated",
+      "scan": "protocol",
+      "expected_findings": ["TLS-PROTOCOL-LEGACY", "TLS-PROTOCOL-NO-MODERN"]
+    },
+    {
+      "target": "rc4.badssl.com",
+      "category": "cipher",
+      "coverage": "backend_limited",
+      "reason": "Current OpenSSL builds remove RC4. Exact probing requires a separately maintained legacy TLS backend."
+    },
+    {
+      "target": "3des.badssl.com",
+      "category": "cipher",
+      "coverage": "backend_limited",
+      "reason": "Current OpenSSL builds can remove 3DES. Exact probing requires a legacy TLS backend."
+    },
+    {
+      "target": "pinning-test.badssl.com",
+      "category": "browser_policy",
+      "coverage": "out_of_scope",
+      "reason": "Certificate pinning is client policy and cannot be inferred from a remote server handshake."
+    },
+    {
+      "category": "mixed_content_and_http_forms",
+      "coverage": "out_of_scope_core_tls",
+      "reason": "Mixed content and insecure forms require an HTTP document crawler, not a TLS handshake scanner."
+    },
+    {
+      "category": "hsts_and_upgrade",
+      "coverage": "planned_http",
+      "reason": "HSTS headers, preload state, and HTTP redirects belong to the optional HTTP assessment."
+    },
+    {
+      "category": "browser_ui_and_known_interception_blocklists",
+      "coverage": "out_of_scope",
+      "reason": "Browser UI behavior and vendor-maintained local certificate blocklists are not generic endpoint TLS properties."
+    }
+  ]
+}
