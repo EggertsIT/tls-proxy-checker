@@ -25,41 +25,22 @@ Never commit the executable, signing credentials, or cloud-signing session data.
 
 ## Verify And Package
 
-```powershell
-$Signature = Get-AuthenticodeSignature .\dist\tls-proxy-checker.exe
-$Signature | Format-List Status, StatusMessage, SignerCertificate, TimeStamperCertificate
-if ($Signature.Status -ne "Valid") { throw "Authenticode signature validation failed" }
-
-.\dist\tls-proxy-checker.exe --version
-.\dist\tls-proxy-checker.exe --help | Out-Null
-
-$Version = (python -c "from tls_proxy_checker import __version__; print(__version__)")
-$Stage = "release\windows-x86_64"
-New-Item -ItemType Directory -Force $Stage | Out-Null
-Copy-Item .\dist\tls-proxy-checker.exe "$Stage\tls-proxy-checker.exe"
-Copy-Item README.md, CHANGELOG.md, LICENSE, NOTICE, THIRD_PARTY_NOTICES.md $Stage
-Compress-Archive "$Stage\*" "release\tls-proxy-checker-$Version-windows-x86_64.zip" -Force
-Copy-Item .\dist\tls-proxy-checker.exe release\tls-proxy-checker-windows-x86_64.exe
-```
-
-Generate lowercase SHA-256 entries for the platform-specific executable and
-ZIP. The file must use LF line endings so `sha256sum --check` works on Linux:
+Run the repository packaging script after signing. It verifies the
+Authenticode signature and timestamp, confirms the project version, collects
+the complete CPython and dependency license texts, creates the ZIP, and writes
+lowercase SHA-256 entries with LF line endings:
 
 ```powershell
-$Files = @(
-    "tls-proxy-checker-windows-x86_64.exe",
-    "tls-proxy-checker-$Version-windows-x86_64.zip"
-)
-$Lines = foreach ($File in $Files) {
-    $Hash = (Get-FileHash "release\$File" -Algorithm SHA256).Hash.ToLowerInvariant()
-    "$Hash  $File"
-}
-[IO.File]::WriteAllText(
-    "release\SHA256SUMS-windows-x86_64.txt",
-    ($Lines -join "`n") + "`n",
-    [Text.UTF8Encoding]::new($false)
-)
+.\scripts\package_windows_release.ps1
 ```
+
+The output directory contains:
+
+- `tls-proxy-checker-windows-x86_64.exe`
+- `tls-proxy-checker-VERSION-windows-x86_64.zip`
+- `SHA256SUMS-windows-x86_64.txt`
+- A staging directory whose `licenses` folder must contain at least the
+  CPython, cryptography, pyOpenSSL, Rich, and PyInstaller license files
 
 ## Publish And Validate
 

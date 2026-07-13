@@ -18,6 +18,25 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Check out verification source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Validate Windows packaging script
+        shell: pwsh
+        run: |
+          $Tokens = $null
+          $Errors = $null
+          $Script = (Resolve-Path "scripts\package_windows_release.ps1").Path
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            $Script,
+            [ref]$Tokens,
+            [ref]$Errors
+          ) | Out-Null
+          if ($Errors.Count) {
+            $Errors | Format-List
+            throw "Windows packaging script contains syntax errors"
+          }
+
       - name: Download Windows release assets
         shell: pwsh
         env:
@@ -61,11 +80,32 @@ jobs:
             "CHANGELOG.md",
             "LICENSE",
             "NOTICE",
-            "THIRD_PARTY_NOTICES.md"
+            "THIRD_PARTY_NOTICES.md",
+            "licenses\CPython-LICENSE.txt"
           )
           foreach ($Name in $Required) {
             if (-not (Test-Path (Join-Path extracted $Name) -PathType Leaf)) {
               throw "Archive is missing $Name"
+            }
+          }
+          $LicenseFiles = @(Get-ChildItem "extracted\licenses" -File)
+          if ($LicenseFiles.Count -lt 10) {
+            throw "Expected at least 10 third-party license files"
+          }
+          $RequiredLicensePrefixes = @(
+            "cffi-",
+            "cryptography-",
+            "markdown-it-py-",
+            "mdurl-",
+            "Pygments-",
+            "pyOpenSSL-",
+            "pycparser-",
+            "rich-",
+            "pyinstaller-"
+          )
+          foreach ($Prefix in $RequiredLicensePrefixes) {
+            if (-not ($LicenseFiles.Name | Where-Object { $_ -like "$Prefix*" })) {
+              throw "Archive is missing a license file beginning with $Prefix"
             }
           }
           $RawHash = (Get-FileHash "artifacts\tls-proxy-checker-windows-x86_64.exe" -Algorithm SHA256).Hash

@@ -1,8 +1,8 @@
 # Third-Party Notices
 
 The standalone binary includes or is built with the following third-party
-software. The CycloneDX SBOM attached to each release records the exact
-versions. Copyright remains with the respective authors.
+software. Platform release metadata and SBOM files record exact versions where
+provided. Copyright remains with the respective authors.
 
 | Component | License | Project |
 | --- | --- | --- |
