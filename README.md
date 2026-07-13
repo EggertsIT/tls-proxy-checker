@@ -3,7 +3,8 @@
 [![CI](https://github.com/EggertsIT/tls-proxy-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/EggertsIT/tls-proxy-checker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-TLS Proxy Checker is a vendor-neutral Linux CLI for two troubleshooting tasks:
+TLS Proxy Checker is a vendor-neutral Windows and Linux CLI for two
+troubleshooting tasks:
 
 1. Prove whether an HTTPS endpoint has protocol and cipher overlap with a
    selected security-proxy inspection profile.
@@ -13,7 +14,35 @@ TLS Proxy Checker is a vendor-neutral Linux CLI for two troubleshooting tasks:
 The application is independent. Vendor names appear only in named capability
 profiles that cite their public source documentation.
 
-## Install on Linux
+## Install
+
+### Windows x86-64
+
+The Windows executable is Authenticode-signed by Roman Eggerts and timestamped
+by Certum. Download the ZIP and its checksum file from the release:
+
+```powershell
+$Version = "0.4.1"
+$Archive = "tls-proxy-checker-$Version-windows-x86_64.zip"
+$BaseUrl = "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v$Version"
+Invoke-WebRequest "$BaseUrl/$Archive" -OutFile $Archive
+Invoke-WebRequest "$BaseUrl/SHA256SUMS-windows-x86_64.txt" -OutFile SHA256SUMS-windows-x86_64.txt
+
+$Expected = ((Get-Content SHA256SUMS-windows-x86_64.txt | Select-String $Archive).Line -split "\s+")[0]
+$Actual = (Get-FileHash $Archive -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($Actual -ne $Expected) { throw "SHA-256 checksum mismatch" }
+
+Expand-Archive $Archive -DestinationPath tls-proxy-checker
+Set-Location tls-proxy-checker
+if ((Get-AuthenticodeSignature .\tls-proxy-checker.exe).Status -ne "Valid") {
+    throw "Authenticode signature validation failed"
+}
+.\tls-proxy-checker.exe --version
+```
+
+Python is not required on the target system.
+
+### Linux x86-64
 
 Standalone release binaries include Python and all Python dependencies. Python
 is not required on the target system.
@@ -142,7 +171,8 @@ make build
 ./dist/tls-proxy-checker --version
 ```
 
-See [Contributing](CONTRIBUTING.md) and the [Changelog](CHANGELOG.md).
+See [Contributing](CONTRIBUTING.md), the [Windows Release Process](docs/windows-release.md),
+and the [Changelog](CHANGELOG.md).
 
 ## Release Process
 

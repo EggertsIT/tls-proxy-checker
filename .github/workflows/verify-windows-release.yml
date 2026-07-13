@@ -1,0 +1,125 @@
+name: Verify Windows Release
+
+"on":
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag containing the Windows assets
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Windows x86-64
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download Windows release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          gh release download $env:RELEASE_TAG `
+            --repo $env:GITHUB_REPOSITORY `
+            --dir artifacts `
+            --pattern "*windows-x86_64*"
+
+      - name: Verify SHA-256 checksums
+        shell: pwsh
+        run: |
+          $ChecksumFile = "artifacts\SHA256SUMS-windows-x86_64.txt"
+          $Entries = Get-Content $ChecksumFile | Where-Object { $_.Trim() }
+          if ($Entries.Count -ne 2) { throw "Expected exactly two checksum entries" }
+          foreach ($Entry in $Entries) {
+            if ($Entry -notmatch '^([0-9a-f]{64})  (.+)$') {
+              throw "Invalid checksum entry: $Entry"
+            }
+            $Expected = $Matches[1]
+            $Path = Join-Path artifacts $Matches[2]
+            if (-not (Test-Path $Path -PathType Leaf)) { throw "Missing asset: $Path" }
+            $Actual = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($Actual -ne $Expected) { throw "Checksum mismatch for $Path" }
+          }
+
+      - name: Verify archive contents
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $Version = $env:RELEASE_TAG.TrimStart('v')
+          $Archive = "artifacts\tls-proxy-checker-$Version-windows-x86_64.zip"
+          Expand-Archive $Archive -DestinationPath extracted
+          $Required = @(
+            "tls-proxy-checker.exe",
+            "README.md",
+            "CHANGELOG.md",
+            "LICENSE",
+            "NOTICE",
+            "THIRD_PARTY_NOTICES.md"
+          )
+          foreach ($Name in $Required) {
+            if (-not (Test-Path (Join-Path extracted $Name) -PathType Leaf)) {
+              throw "Archive is missing $Name"
+            }
+          }
+          $RawHash = (Get-FileHash "artifacts\tls-proxy-checker-windows-x86_64.exe" -Algorithm SHA256).Hash
+          $ZipHash = (Get-FileHash "extracted\tls-proxy-checker.exe" -Algorithm SHA256).Hash
+          if ($RawHash -ne $ZipHash) { throw "ZIP executable differs from raw executable" }
+
+      - name: Verify Authenticode signature
+        shell: pwsh
+        run: |
+          $Executable = "artifacts\tls-proxy-checker-windows-x86_64.exe"
+          $Signature = Get-AuthenticodeSignature $Executable
+          $Signature | Format-List Status, StatusMessage, SignerCertificate, TimeStamperCertificate
+          if ($Signature.Status -ne 'Valid') {
+            throw "Authenticode validation failed: $($Signature.StatusMessage)"
+          }
+          if ($Signature.SignerCertificate.Subject -notmatch 'CN=Roman Eggerts') {
+            throw "Unexpected Authenticode signer: $($Signature.SignerCertificate.Subject)"
+          }
+          if (-not $Signature.TimeStamperCertificate) {
+            throw "Authenticode signature is not timestamped"
+          }
+
+      - name: Run CLI smoke tests
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $Executable = (Resolve-Path "artifacts\tls-proxy-checker-windows-x86_64.exe").Path
+          $ExpectedVersion = $env:RELEASE_TAG.TrimStart('v')
+          $VersionOutput = (& $Executable --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--version failed" }
+          if ($VersionOutput -ne "tls-proxy-checker $ExpectedVersion") {
+            throw "Unexpected version output: $VersionOutput"
+          }
+          & $Executable --help | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "--help failed" }
+
+      - name: Run live TLS smoke test
+        shell: pwsh
+        run: |
+          $Executable = (Resolve-Path "artifacts\tls-proxy-checker-windows-x86_64.exe").Path
+          & $Executable google.de --no-protocols --output-file windows-smoke.json
+          if ($LASTEXITCODE -ne 0) { throw "Live TLS scan failed" }
+          $Report = Get-Content windows-smoke.json -Raw | ConvertFrom-Json
+          if ($Report.schema_version -ne 4) { throw "Unexpected JSON schema version" }
+          if ($Report.error) { throw "Scanner returned an error: $($Report.error)" }
+          if (-not $Report.inspection_verdict.inspectable) {
+            throw "Expected google.de to have inspection-profile overlap"
+          }
+          if ($Report.security_assessment.summary.status -ne 'pass') {
+            throw "Expected a clean certificate assessment"
+          }
+          "## Windows release verification" >> $env:GITHUB_STEP_SUMMARY
+          "- Version: $(& $Executable --version)" >> $env:GITHUB_STEP_SUMMARY
+          "- TLS: $($Report.tls_version) / $($Report.cipher.name)" >> $env:GITHUB_STEP_SUMMARY
+          "- Inspection profile: $($Report.inspection_profile.id)" >> $env:GITHUB_STEP_SUMMARY
+          "- Security findings: $($Report.security_assessment.summary.total)" >> $env:GITHUB_STEP_SUMMARY

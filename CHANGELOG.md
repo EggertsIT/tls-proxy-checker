@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The project follows
 
 ## [Unreleased]
 
+### Added
+
+- Authenticode-signed Windows x86-64 release artifacts and checksum file.
+- A Windows-hosted workflow for validating published hashes, signatures,
+  archive contents, CLI startup, and live TLS results.
+
 ## [0.4.1] - 2026-07-13
 
 ### Fixed
