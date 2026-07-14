@@ -22,7 +22,7 @@ binary.
 The GLIBC floor is a binary compatibility statement, not a promise that every
 distribution using that GLIBC version is still maintained or secure. Release
 `v0.4.1` was built on Ubuntu 22.04 and requires glibc 2.35; the 2.17 contract
-applies to Linux binaries built after that release.
+applies starting with Linux release `v0.4.2`.
 
 ## Build Locally
 
