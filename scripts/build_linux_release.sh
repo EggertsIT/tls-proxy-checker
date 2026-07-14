@@ -75,6 +75,7 @@ python scripts/check_glibc.py \
   dist-audit/tls-proxy-checker-audit \
   --maximum "${MAXIMUM_GLIBC}" \
   --json >"${OUTPUT_DIRECTORY}/glibc-requirements.json"
+cat "${OUTPUT_DIRECTORY}/glibc-requirements.json"
 python -m pip_audit \
   --format cyclonedx-json \
   --output "${OUTPUT_DIRECTORY}/tls-proxy-checker-${version}.sbom.cdx.json"
