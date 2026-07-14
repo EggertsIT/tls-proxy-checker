@@ -61,3 +61,32 @@ jobs:
       - name: Audit dependencies
         if: matrix.python-version == '3.14'
         run: python -m pip_audit
+
+  linux-compatibility:
+    name: Linux glibc 2.17
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Validate build scripts
+        run: bash -n scripts/run_linux_release_build.sh scripts/build_linux_release.sh
+
+      - name: Build on the glibc 2.17 baseline
+        run: bash scripts/run_linux_release_build.sh
+
+      - name: Smoke-test on the GitHub runner
+        run: |
+          ./release-assets/tls-proxy-checker-linux-x86_64 --version
+          ./release-assets/tls-proxy-checker-linux-x86_64 --help > /dev/null
+
+      - name: Report compatibility evidence
+        run: |
+          jq --exit-status '
+            .within_maximum == true and
+            .maximum_allowed_glibc == "2.17" and
+            .required_glibc != null
+          ' release-assets/glibc-requirements.json
+          cat release-assets/glibc-requirements.json >> "${GITHUB_STEP_SUMMARY}"

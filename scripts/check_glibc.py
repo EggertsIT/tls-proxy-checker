@@ -19,7 +19,7 @@ GLIBC_VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)$")
 def parse_glibc_version(value: str) -> tuple[int, int]:
     match = GLIBC_VERSION_PATTERN.fullmatch(value)
     if not match:
-        raise argparse.ArgumentTypeError("expected a GLIBC version such as 2.35")
+        raise argparse.ArgumentTypeError("expected a GLIBC version such as 2.17")
     return int(match.group(1)), int(match.group(2))
 
 

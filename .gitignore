@@ -22,6 +22,7 @@ build-audit/
 dist/
 dist-audit/
 release/
+release-assets/
 win/
 .pyinstaller-cache/
 .pip-audit-cache/

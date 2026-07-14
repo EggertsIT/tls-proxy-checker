@@ -57,11 +57,13 @@ sudo install -m 0755 tls-proxy-checker /usr/local/bin/tls-proxy-checker
 tls-proxy-checker --version
 ```
 
-The Linux x86-64 build requires glibc 2.35 or newer. Every release includes a
-checksum file, build metadata, a GLIBC symbol report, a CycloneDX SBOM, and a
-GitHub artifact attestation. `BUILDINFO.json` records the audited requirement
-for that exact build. With the GitHub CLI installed, provenance can be verified
-before installation:
+Release `v0.4.1` requires glibc 2.35 or newer. Linux binaries built after that
+release use a pinned PyPA manylinux2014 environment and target glibc 2.17 or
+newer. Every release includes a checksum file, build metadata, a GLIBC symbol
+report, a CycloneDX SBOM, and a GitHub artifact attestation. `BUILDINFO.json`
+records the audited requirement for that exact build. Musl-only systems such
+as a default Alpine installation are not supported. With the GitHub CLI
+installed, provenance can be verified before installation:
 
 ```bash
 gh attestation verify "tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz" \
@@ -171,15 +173,24 @@ make build
 ./dist/tls-proxy-checker --version
 ```
 
-See [Contributing](CONTRIBUTING.md), the [Windows Release Process](docs/windows-release.md),
-and the [Changelog](CHANGELOG.md).
+Reproduce the glibc 2.17 Linux release build with Docker:
+
+```bash
+bash scripts/run_linux_release_build.sh
+```
+
+See [Contributing](CONTRIBUTING.md), the
+[Linux Release Process](docs/linux-release.md), the
+[Windows Release Process](docs/windows-release.md), and the
+[Changelog](CHANGELOG.md).
 
 ## Release Process
 
 Tagging `vMAJOR.MINOR.PATCH` runs the tests, security checks, dependency audit,
-Linux PyInstaller build, smoke tests, GLIBC audit, SBOM generation, checksums,
-artifact attestation, and GitHub Release creation. The tag must match both
-version declarations and GitHub must verify its cryptographic signature.
+Linux PyInstaller build in the pinned glibc 2.17 environment, smoke tests,
+GLIBC audit, SBOM generation, checksums, artifact attestation, and GitHub
+Release creation. The tag must match both version declarations and GitHub must
+verify its cryptographic signature.
 Register the maintainer's public SSH or GPG key as a signing key in GitHub
 before creating a release tag. The configured Git email must also be a verified
 address for that GitHub account; the account's GitHub-provided noreply address
