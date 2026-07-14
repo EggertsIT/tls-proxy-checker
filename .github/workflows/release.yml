@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   linux-x86-64:
-    name: Linux x86-64
+    name: Linux x86-64 (glibc 2.17)
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Check out source
@@ -44,54 +44,19 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: "3.13"
-          cache: pip
+      - name: Build release assets on glibc 2.17
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/run_linux_release_build.sh
 
-      - name: Install project
+      - name: Smoke-test release binary on the GitHub runner
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install ".[dev,build]"
-
-      - name: Verify release version
-        run: python scripts/verify_release_version.py "${GITHUB_REF_NAME}"
-
-      - name: Run release gates
-        run: |
-          python -m pytest -q
-          python -m bandit -q -r src scripts
-          python -m pip_audit
-
-      - name: Build standalone binary
-        run: |
-          make build
-          make build-audit
-
-      - name: Smoke-test standalone binary
-        run: |
-          ./dist/tls-proxy-checker --version
-          ./dist/tls-proxy-checker --help > /dev/null
-
-      - name: Assemble release assets
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          mkdir -p release-assets/package
-          install -m 0755 dist/tls-proxy-checker release-assets/tls-proxy-checker-linux-x86_64
-          install -m 0755 dist/tls-proxy-checker release-assets/package/tls-proxy-checker
-          cp README.md CHANGELOG.md LICENSE NOTICE THIRD_PARTY_NOTICES.md release-assets/package/
-          python scripts/collect_licenses.py release-assets/package/licenses
-          python scripts/check_glibc.py dist-audit/tls-proxy-checker-audit --maximum 2.35 --json > release-assets/glibc-requirements.json
-          python -m pip_audit --format cyclonedx-json --output "release-assets/tls-proxy-checker-${version}.sbom.cdx.json"
-          python scripts/build_release_metadata.py \
-            --binary release-assets/tls-proxy-checker-linux-x86_64 \
-            --glibc-report release-assets/glibc-requirements.json \
-            --output release-assets/BUILDINFO.json
-          tar -C release-assets/package -czf "release-assets/tls-proxy-checker-${version}-linux-x86_64.tar.gz" .
-          rm -rf release-assets/package
-          cd release-assets
-          sha256sum tls-proxy-checker-linux-x86_64 tls-proxy-checker-*.tar.gz tls-proxy-checker-*.sbom.cdx.json BUILDINFO.json glibc-requirements.json > SHA256SUMS
+          ./release-assets/tls-proxy-checker-linux-x86_64 --version
+          ./release-assets/tls-proxy-checker-linux-x86_64 --help > /dev/null
+          jq --exit-status '
+            .within_maximum == true and
+            .maximum_allowed_glibc == "2.17"
+          ' release-assets/glibc-requirements.json
 
       - name: Attest release artifacts
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
