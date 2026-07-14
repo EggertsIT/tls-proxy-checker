@@ -41,8 +41,8 @@ if ((Get-AuthenticodeSignature .\tls-proxy-checker.exe).Status -ne "Valid") {
 ```
 
 Python is not required on the target system.
-The current signed Windows build remains `v0.4.1`; `v0.4.2` publishes new
-Linux assets only.
+The current signed Windows build remains `v0.4.1`; newer releases currently
+publish Linux assets only.
 
 ### Linux x86-64
 
@@ -50,7 +50,7 @@ Standalone release binaries include Python and all Python dependencies. Python
 is not required on the target system.
 
 ```bash
-VERSION=0.4.2
+VERSION=0.4.3
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz"
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS

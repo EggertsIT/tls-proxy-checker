@@ -82,6 +82,10 @@ jobs:
           ./release-assets/tls-proxy-checker-linux-x86_64 --version
           ./release-assets/tls-proxy-checker-linux-x86_64 --help > /dev/null
 
+      - name: Verify release checksums
+        working-directory: release-assets
+        run: sha256sum --check SHA256SUMS
+
       - name: Report compatibility evidence
         run: |
           jq --exit-status '
@@ -89,4 +93,11 @@ jobs:
             .maximum_allowed_glibc == "2.17" and
             .required_glibc != null
           ' release-assets/glibc-requirements.json
+          jq --exit-status '
+            .build.python_distribution as $python |
+            ($python.url | type) == "string" and
+            ($python.url | startswith("https://")) and
+            ($python.sha256 | type) == "string" and
+            ($python.sha256 | test("^[0-9a-f]{64}$"))
+          ' release-assets/BUILDINFO.json
           cat release-assets/glibc-requirements.json >> "${GITHUB_STEP_SUMMARY}"

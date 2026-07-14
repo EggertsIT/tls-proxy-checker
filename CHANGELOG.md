@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-14
+
+### Fixed
+
+- Linux release builds now require the pinned standalone CPython URL and
+  SHA-256 digest as explicit metadata inputs, preventing an incomplete
+  `BUILDINFO.json` from being published.
+
+### Changed
+
+- Version 0.4.3 is a Linux-only metadata-hardening release. The signed Windows
+  version remains 0.4.1 because the Windows executable is unaffected.
+
 ## [0.4.2] - 2026-07-14
 
 ### Added
@@ -65,7 +78,8 @@ All notable changes to this project are documented here. The project follows
 - Cipher entries use `profile_status` instead of `zscaler_status`.
 - The mTLS finding ID is now `TLS-PROXY-MTLS-ENFORCED`.
 
-[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/EggertsIT/tls-proxy-checker/releases/tag/v0.4.0
