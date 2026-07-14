@@ -10,10 +10,20 @@ import importlib.metadata
 import json
 import os
 import platform
+import re
 import ssl
 from pathlib import Path
 
 from tls_proxy_checker import __version__
+
+
+SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+def parse_sha256(value: str) -> str:
+    if not SHA256_PATTERN.fullmatch(value):
+        raise argparse.ArgumentTypeError("expected a 64-character SHA-256 digest")
+    return value.lower()
 
 
 def sha256(path: Path) -> str:
@@ -44,6 +54,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
     parser.add_argument("--glibc-report", required=True, type=Path)
+    parser.add_argument("--python-distribution-url", required=True)
+    parser.add_argument(
+        "--python-distribution-sha256",
+        required=True,
+        type=parse_sha256,
+    )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
@@ -75,10 +91,8 @@ def main() -> int:
             "python": platform.python_version(),
             "python_implementation": platform.python_implementation(),
             "python_distribution": {
-                "url": os.environ.get("TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_URL"),
-                "sha256": os.environ.get(
-                    "TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_SHA256"
-                ),
+                "url": args.python_distribution_url,
+                "sha256": args.python_distribution_sha256,
             },
             "stdlib_openssl": ssl.OPENSSL_VERSION,
             "cryptography_openssl": cryptography_openssl_version(),

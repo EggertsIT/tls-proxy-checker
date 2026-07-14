@@ -41,8 +41,6 @@ fi
 
 "${BASE_PYTHON}" -m venv "${BUILD_VENV}"
 export PATH="${BUILD_VENV}/bin:${PATH}"
-export TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_URL="${PYTHON_DISTRIBUTION_URL}"
-export TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_SHA256
 python -m pip install --upgrade pip
 python -m pip install ".[dev,build]"
 
@@ -82,6 +80,8 @@ python -m pip_audit \
 python scripts/build_release_metadata.py \
   --binary "${OUTPUT_DIRECTORY}/tls-proxy-checker-linux-x86_64" \
   --glibc-report "${OUTPUT_DIRECTORY}/glibc-requirements.json" \
+  --python-distribution-url "${PYTHON_DISTRIBUTION_URL}" \
+  --python-distribution-sha256 "${PYTHON_DISTRIBUTION_SHA256}" \
   --output "${OUTPUT_DIRECTORY}/BUILDINFO.json"
 
 tar -C "${OUTPUT_DIRECTORY}/package" \
