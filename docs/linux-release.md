@@ -15,7 +15,8 @@ binary.
 - Architecture: x86-64
 - C library: glibc 2.17 or newer
 - Python on target: not required
-- Build Python: CPython 3.13 supplied by the pinned manylinux image
+- Build Python: a SHA-256-verified, pinned Astral standalone CPython 3.13
+  distribution with a shared `libpython`
 - Alpine and other musl-only systems: not supported without a glibc runtime
 
 The GLIBC floor is a binary compatibility statement, not a promise that every
@@ -34,8 +35,9 @@ bash scripts/run_linux_release_build.sh
 
 The wrapper runs with the host user's numeric UID and GID, drops Linux
 capabilities, disables privilege escalation, and mounts the repository into
-the pinned build image. The inner build runs tests, Bandit, pip-audit,
-PyInstaller, CLI smoke tests, and the GLIBC symbol audit before creating:
+the pinned build image. The inner build verifies the separately pinned CPython
+archive before running tests, Bandit, pip-audit, PyInstaller, CLI smoke tests,
+and the GLIBC symbol audit before creating:
 
 - `release-assets/tls-proxy-checker-linux-x86_64`
 - `release-assets/tls-proxy-checker-VERSION-linux-x86_64.tar.gz`
@@ -62,4 +64,5 @@ attestation and publication.
 When updating the manylinux image digest, verify that it is the current digest
 for `quay.io/pypa/manylinux2014_x86_64`, review the upstream image change, and
 let the compatibility job audit the complete generated ELF inventory before
-merging.
+merging. Treat the standalone CPython URL and digest as a second pinned build
+input: update them together from the same upstream release asset.

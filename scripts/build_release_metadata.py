@@ -74,6 +74,12 @@ def main() -> int:
         "build": {
             "python": platform.python_version(),
             "python_implementation": platform.python_implementation(),
+            "python_distribution": {
+                "url": os.environ.get("TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_URL"),
+                "sha256": os.environ.get(
+                    "TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_SHA256"
+                ),
+            },
             "stdlib_openssl": ssl.OPENSSL_VERSION,
             "cryptography_openssl": cryptography_openssl_version(),
             "pyinstaller": dependency_version("pyinstaller"),

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly BASE_PYTHON="/opt/python/cp313-cp313/bin/python"
+readonly PYTHON_DISTRIBUTION_RELEASE="20260623"
+readonly PYTHON_DISTRIBUTION_ASSET="cpython-3.13.14%2B20260623-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+readonly PYTHON_DISTRIBUTION_URL="https://github.com/astral-sh/python-build-standalone/releases/download/${PYTHON_DISTRIBUTION_RELEASE}/${PYTHON_DISTRIBUTION_ASSET}"
+readonly PYTHON_DISTRIBUTION_SHA256="459ed79967acc207bef2ff5124dac35d74d5108528e37b15395d14e2922f2c92"
+readonly PYTHON_ARCHIVE="/tmp/cpython-linux-x86_64.tar.gz"
+readonly BASE_PYTHON="/tmp/python/bin/python3"
 readonly BUILD_VENV="/tmp/tls-proxy-checker-build"
 readonly MAXIMUM_GLIBC="2.17"
 readonly OUTPUT_DIRECTORY="release-assets"
@@ -10,8 +15,8 @@ if [[ "$(uname -m)" != "x86_64" ]]; then
   echo "the Linux release must be built on x86-64" >&2
   exit 1
 fi
-if [[ ! -x "${BASE_PYTHON}" ]]; then
-  echo "CPython 3.13 was not found at ${BASE_PYTHON}" >&2
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required to retrieve the pinned CPython distribution" >&2
   exit 1
 fi
 
@@ -22,8 +27,22 @@ if [[ "${build_glibc}" != "${MAXIMUM_GLIBC}" ]]; then
 fi
 
 mkdir -p "${HOME}"
+curl --fail --location --retry 3 --silent --show-error \
+  --output "${PYTHON_ARCHIVE}" \
+  "${PYTHON_DISTRIBUTION_URL}"
+printf '%s  %s\n' \
+  "${PYTHON_DISTRIBUTION_SHA256}" \
+  "${PYTHON_ARCHIVE}" | sha256sum --check --status
+tar -xzf "${PYTHON_ARCHIVE}" -C /tmp
+if [[ ! -x "${BASE_PYTHON}" || ! -f /tmp/python/lib/libpython3.13.so.1.0 ]]; then
+  echo "the pinned CPython distribution is missing its shared library" >&2
+  exit 1
+fi
+
 "${BASE_PYTHON}" -m venv "${BUILD_VENV}"
 export PATH="${BUILD_VENV}/bin:${PATH}"
+export TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_URL="${PYTHON_DISTRIBUTION_URL}"
+export TLS_PROXY_CHECKER_PYTHON_DISTRIBUTION_SHA256
 python -m pip install --upgrade pip
 python -m pip install ".[dev,build]"
 

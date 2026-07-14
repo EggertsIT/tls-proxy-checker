@@ -17,7 +17,8 @@ All notable changes to this project are documented here. The project follows
 - Future release workflows reject lightweight, unsigned, or unverified tags.
 - Windows release verification now requires packaged dependency licenses.
 - Linux release binaries now build in a digest-pinned PyPA manylinux2014 image
-  and enforce a maximum GLIBC requirement of 2.17 instead of 2.35.
+  with a SHA-256-pinned shared CPython distribution and enforce a maximum GLIBC
+  requirement of 2.17 instead of 2.35.
 - CI now builds and audits the complete Linux x86-64 release artifact on the
   glibc 2.17 baseline.
 
