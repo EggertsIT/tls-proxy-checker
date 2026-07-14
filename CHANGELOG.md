@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-07-14
+
 ### Added
 
 - A documented contribution contract and invariant tests for adding or
@@ -14,6 +16,8 @@ All notable changes to this project are documented here. The project follows
 
 ### Changed
 
+- Version 0.4.2 is a Linux-only compatibility release. The signed Windows
+  version remains 0.4.1 because the Windows executable is unaffected.
 - Future release workflows reject lightweight, unsigned, or unverified tags.
 - Windows release verification now requires packaged dependency licenses.
 - Linux release binaries now build in a digest-pinned PyPA manylinux2014 image
@@ -61,6 +65,7 @@ All notable changes to this project are documented here. The project follows
 - Cipher entries use `profile_status` instead of `zscaler_status`.
 - The mTLS finding ID is now `TLS-PROXY-MTLS-ENFORCED`.
 
-[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/EggertsIT/tls-proxy-checker/releases/tag/v0.4.0

@@ -41,6 +41,8 @@ if ((Get-AuthenticodeSignature .\tls-proxy-checker.exe).Status -ne "Valid") {
 ```
 
 Python is not required on the target system.
+The current signed Windows build remains `v0.4.1`; `v0.4.2` publishes new
+Linux assets only.
 
 ### Linux x86-64
 
@@ -48,7 +50,7 @@ Standalone release binaries include Python and all Python dependencies. Python
 is not required on the target system.
 
 ```bash
-VERSION=0.4.1
+VERSION=0.4.2
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz"
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS
@@ -57,13 +59,13 @@ sudo install -m 0755 tls-proxy-checker /usr/local/bin/tls-proxy-checker
 tls-proxy-checker --version
 ```
 
-Release `v0.4.1` requires glibc 2.35 or newer. Linux binaries built after that
-release use a pinned PyPA manylinux2014 environment and target glibc 2.17 or
-newer. Every release includes a checksum file, build metadata, a GLIBC symbol
-report, a CycloneDX SBOM, and a GitHub artifact attestation. `BUILDINFO.json`
-records the audited requirement for that exact build. Musl-only systems such
-as a default Alpine installation are not supported. With the GitHub CLI
-installed, provenance can be verified before installation:
+Linux release `v0.4.1` requires glibc 2.35 or newer. Starting with `v0.4.2`,
+Linux binaries use a pinned PyPA manylinux2014 environment and target glibc
+2.17 or newer. Every release includes a checksum file, build metadata, a GLIBC
+symbol report, a CycloneDX SBOM, and a GitHub artifact attestation.
+`BUILDINFO.json` records the audited requirement for that exact build.
+Musl-only systems such as a default Alpine installation are not supported.
+With the GitHub CLI installed, provenance can be verified before installation:
 
 ```bash
 gh attestation verify "tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz" \
