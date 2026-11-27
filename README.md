@@ -50,7 +50,7 @@ Standalone release binaries include Python and all Python dependencies. Python
 is not required on the target system.
 
 ```bash
-VERSION=0.4.3
+VERSION=0.5.0
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz"
 curl -LO "https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS
@@ -65,11 +65,43 @@ Linux binaries use a pinned PyPA manylinux2014 environment and target glibc
 symbol report, a CycloneDX SBOM, and a GitHub artifact attestation.
 `BUILDINFO.json` records the audited requirement for that exact build.
 Musl-only systems such as a default Alpine installation are not supported.
-With the GitHub CLI installed, provenance can be verified before installation:
+Use the GitHub CLI to verify provenance before installation.
 
 ```bash
 gh attestation verify "tls-proxy-checker-${VERSION}-linux-x86_64.tar.gz" \
   --repo EggertsIT/tls-proxy-checker
+```
+
+### Linux ARM64
+
+Build the standalone ARM64 executable from source with Docker. See the
+[Linux build instructions](docs/linux-release.md) for the build and checksum
+commands.
+
+The ARM64 executable requires glibc 2.17 or newer. Use these commands to
+download and verify the ARM64 release.
+
+```bash
+VERSION=0.5.0
+ARCHIVE="tls-proxy-checker-${VERSION}-linux-aarch64.tar.gz"
+BASE_URL="https://github.com/EggertsIT/tls-proxy-checker/releases/download/v${VERSION}"
+curl -fLO "${BASE_URL}/${ARCHIVE}"
+curl -fLO "${BASE_URL}/SHA256SUMS-linux-aarch64"
+awk -v archive="${ARCHIVE}" '$2 == archive' SHA256SUMS-linux-aarch64 | sha256sum --check
+```
+
+Use the GitHub CLI to verify provenance before installation.
+
+```bash
+gh attestation verify "${ARCHIVE}" --repo EggertsIT/tls-proxy-checker
+```
+
+Install the executable on your ARM64 Linux system.
+
+```bash
+tar -xzf "${ARCHIVE}"
+sudo install -m 0755 tls-proxy-checker /usr/local/bin/tls-proxy-checker
+tls-proxy-checker --version
 ```
 
 ## Usage

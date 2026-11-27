@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-27
+
+### Added
+
+- Standalone ARM64 Linux builds for glibc 2.17 or newer.
+
 ## [0.4.3] - 2026-07-14
 
 ### Fixed
@@ -78,7 +84,8 @@ All notable changes to this project are documented here. The project follows
 - Cipher entries use `profile_status` instead of `zscaler_status`.
 - The mTLS finding ID is now `TLS-PROXY-MTLS-ENFORCED`.
 
-[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/EggertsIT/tls-proxy-checker/compare/v0.4.0...v0.4.1

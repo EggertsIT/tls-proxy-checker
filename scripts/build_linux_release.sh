@@ -1,18 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+architecture="${1-x86_64}"
+case "${architecture}" in
+  x86_64)
+    metadata_suffix=""
+    readonly PYTHON_DISTRIBUTION_SHA256="459ed79967acc207bef2ff5124dac35d74d5108528e37b15395d14e2922f2c92"
+    ;;
+  aarch64)
+    metadata_suffix="-linux-aarch64"
+    readonly PYTHON_DISTRIBUTION_SHA256="e931d7a393f54902503f8745ceb35420e7dd50a067e78e5f45c71404f7a15b30"
+    ;;
+  *)
+    echo "unsupported Linux release architecture: ${architecture}" >&2
+    exit 2
+    ;;
+esac
+
 readonly PYTHON_DISTRIBUTION_RELEASE="20260623"
-readonly PYTHON_DISTRIBUTION_ASSET="cpython-3.13.14%2B20260623-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+readonly PYTHON_DISTRIBUTION_ASSET="cpython-3.13.14%2B${PYTHON_DISTRIBUTION_RELEASE}-${architecture}-unknown-linux-gnu-install_only_stripped.tar.gz"
 readonly PYTHON_DISTRIBUTION_URL="https://github.com/astral-sh/python-build-standalone/releases/download/${PYTHON_DISTRIBUTION_RELEASE}/${PYTHON_DISTRIBUTION_ASSET}"
-readonly PYTHON_DISTRIBUTION_SHA256="459ed79967acc207bef2ff5124dac35d74d5108528e37b15395d14e2922f2c92"
-readonly PYTHON_ARCHIVE="/tmp/cpython-linux-x86_64.tar.gz"
+readonly PYTHON_ARCHIVE="/tmp/cpython-linux-${architecture}.tar.gz"
 readonly BASE_PYTHON="/tmp/python/bin/python3"
 readonly BUILD_VENV="/tmp/tls-proxy-checker-build"
 readonly MAXIMUM_GLIBC="2.17"
-readonly OUTPUT_DIRECTORY="release-assets"
+readonly OUTPUT_DIRECTORY="${PWD}/release-assets"
 
-if [[ "$(uname -m)" != "x86_64" ]]; then
-  echo "the Linux release must be built on x86-64" >&2
+build_architecture="$(uname -m)"
+if [[ "${build_architecture}" != "${architecture}" ]]; then
+  echo "expected ${architecture} build image, found ${build_architecture}" >&2
   exit 1
 fi
 if ! command -v curl >/dev/null 2>&1; then
@@ -25,6 +41,11 @@ if [[ "${build_glibc}" != "${MAXIMUM_GLIBC}" ]]; then
   echo "expected glibc ${MAXIMUM_GLIBC} build image, found ${build_glibc}" >&2
   exit 1
 fi
+
+# Both architectures use the same PyInstaller paths in a local checkout.
+mkdir -p "${OUTPUT_DIRECTORY}"
+exec 9>"${OUTPUT_DIRECTORY}/.build.lock"
+flock --exclusive 9
 
 mkdir -p "${HOME}"
 curl --fail --location --retry 3 --silent --show-error \
@@ -57,44 +78,43 @@ make build-audit
 ./dist/tls-proxy-checker --version
 ./dist/tls-proxy-checker --help >/dev/null
 
-rm -rf "${OUTPUT_DIRECTORY}"
-mkdir -p "${OUTPUT_DIRECTORY}/package"
-install -m 0755 \
-  dist/tls-proxy-checker \
-  "${OUTPUT_DIRECTORY}/tls-proxy-checker-linux-x86_64"
-install -m 0755 \
-  dist/tls-proxy-checker \
-  "${OUTPUT_DIRECTORY}/package/tls-proxy-checker"
+binary="tls-proxy-checker-linux-${architecture}"
+archive="tls-proxy-checker-${version}-linux-${architecture}.tar.gz"
+sbom="tls-proxy-checker-${version}${metadata_suffix}.sbom.cdx.json"
+buildinfo="BUILDINFO${metadata_suffix}.json"
+glibc_report="glibc-requirements${metadata_suffix}.json"
+checksums="SHA256SUMS${metadata_suffix}"
+artifacts=("${binary}" "${archive}" "${sbom}" "${buildinfo}" "${glibc_report}")
+
+stage="$(mktemp -d "${OUTPUT_DIRECTORY}/.build-${architecture}.XXXXXX")"
+trap 'rm -rf -- "${stage}"' EXIT
+mkdir "${stage}/package"
+install -m 0755 dist/tls-proxy-checker "${stage}/${binary}"
+install -m 0755 dist/tls-proxy-checker "${stage}/package/tls-proxy-checker"
 cp \
   README.md CHANGELOG.md LICENSE NOTICE THIRD_PARTY_NOTICES.md \
-  "${OUTPUT_DIRECTORY}/package/"
-python scripts/collect_licenses.py "${OUTPUT_DIRECTORY}/package/licenses"
+  "${stage}/package/"
+python scripts/collect_licenses.py "${stage}/package/licenses"
 python scripts/check_glibc.py \
   dist-audit/tls-proxy-checker-audit \
   --maximum "${MAXIMUM_GLIBC}" \
-  --json >"${OUTPUT_DIRECTORY}/glibc-requirements.json"
-cat "${OUTPUT_DIRECTORY}/glibc-requirements.json"
+  --json >"${stage}/${glibc_report}"
+cat "${stage}/${glibc_report}"
 python -m pip_audit \
   --format cyclonedx-json \
-  --output "${OUTPUT_DIRECTORY}/tls-proxy-checker-${version}.sbom.cdx.json"
+  --output "${stage}/${sbom}"
 python scripts/build_release_metadata.py \
-  --binary "${OUTPUT_DIRECTORY}/tls-proxy-checker-linux-x86_64" \
-  --glibc-report "${OUTPUT_DIRECTORY}/glibc-requirements.json" \
+  --binary "${stage}/${binary}" \
+  --glibc-report "${stage}/${glibc_report}" \
   --python-distribution-url "${PYTHON_DISTRIBUTION_URL}" \
   --python-distribution-sha256 "${PYTHON_DISTRIBUTION_SHA256}" \
-  --output "${OUTPUT_DIRECTORY}/BUILDINFO.json"
+  --output "${stage}/${buildinfo}"
 
-tar -C "${OUTPUT_DIRECTORY}/package" \
-  -czf "${OUTPUT_DIRECTORY}/tls-proxy-checker-${version}-linux-x86_64.tar.gz" .
-rm -rf "${OUTPUT_DIRECTORY}/package"
+tar -C "${stage}/package" -czf "${stage}/${archive}" .
+chmod -R a+rX "${stage}" dist dist-audit build build-audit
 (
-  cd "${OUTPUT_DIRECTORY}"
-  sha256sum \
-    tls-proxy-checker-linux-x86_64 \
-    tls-proxy-checker-*.tar.gz \
-    tls-proxy-checker-*.sbom.cdx.json \
-    BUILDINFO.json \
-    glibc-requirements.json >SHA256SUMS
+  cd "${stage}"
+  sha256sum "${artifacts[@]}" >"${checksums}"
+  chmod a+r "${checksums}"
+  mv -- "${artifacts[@]}" "${checksums}" "${OUTPUT_DIRECTORY}/"
 )
-
-chmod -R a+rX "${OUTPUT_DIRECTORY}" dist dist-audit build build-audit

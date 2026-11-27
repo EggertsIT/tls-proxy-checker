@@ -1,68 +1,72 @@
 # Linux Release Process
 
-Linux x86-64 releases are built in the official PyPA
+The Linux build uses the official PyPA
 [`manylinux2014`](https://github.com/pypa/manylinux#manylinux2014-centos-7-based-glibc-217)
-image. The image is pinned by digest in
-`scripts/run_linux_release_build.sh`, and the release gate rejects any bundled
-ELF file that imports a GLIBC symbol newer than 2.17.
+image for each architecture. `scripts/run_linux_release_build.sh` pins each
+image by digest. The release build rejects any bundled ELF file that imports
+a GLIBC symbol newer than 2.17.
 
-Building on an older runtime is essential. Lowering the audit threshold while
-continuing to build on Ubuntu 22.04 does not change the symbols imported by the
-binary.
+The older runtime gives the linker access to the glibc symbols in the target
+version.
 
 ## Compatibility Contract
 
-- Architecture: x86-64
-- C library: glibc 2.17 or newer
-- Python on target: not required
-- Build Python: a SHA-256-verified, pinned Astral standalone CPython 3.13
-  distribution with a shared `libpython`
-- Alpine and other musl-only systems: not supported without a glibc runtime
+- Use x86-64 or ARM64 (`aarch64`).
+- Use glibc 2.17 or newer.
+- The standalone executable includes Python.
+- The build uses a pinned Astral CPython 3.13 distribution with a shared
+  `libpython`. The build verifies the SHA-256 digest.
+- Alpine and other musl-only systems require a glibc runtime.
 
-The GLIBC floor is a binary compatibility statement, not a promise that every
-distribution using that GLIBC version is still maintained or secure. Release
-`v0.4.1` was built on Ubuntu 22.04 and requires glibc 2.35; the 2.17 contract
-applies starting with Linux release `v0.4.2`.
+Linux x86-64 release `v0.4.1` used Ubuntu 22.04 and requires glibc 2.35.
+Version `v0.4.2` introduced the glibc 2.17 build. ARM64 uses the same limit.
+Your distribution vendor determines its maintenance and security support.
 
 ## Build Locally
 
-Docker is the only host dependency. On non-x86-64 hosts, Docker must provide
-`linux/amd64` emulation.
+Install Docker on the host. If the target and host architectures differ,
+enable Docker emulation for the target platform.
 
 ```bash
-bash scripts/run_linux_release_build.sh
+bash scripts/run_linux_release_build.sh          # x86-64 (linux/amd64)
+bash scripts/run_linux_release_build.sh arm64    # ARM64 (linux/arm64)
 ```
 
 The wrapper runs with the host user's numeric UID and GID, drops Linux
 capabilities, disables privilege escalation, and mounts the repository into
-the pinned build image. The inner build verifies the separately pinned CPython
-archive before running tests, Bandit, pip-audit, PyInstaller, CLI smoke tests,
-and the GLIBC symbol audit before creating:
+the pinned build image. A file lock limits each checkout to one build at a
+time. The inner build verifies the separately pinned CPython archive before
+running tests, Bandit, pip-audit, PyInstaller, CLI smoke tests, and the GLIBC
+symbol audit. It writes these files to `release-assets/`. Each checksum file
+lists the files from the most recent build for that architecture.
 
-- `release-assets/tls-proxy-checker-linux-x86_64`
-- `release-assets/tls-proxy-checker-VERSION-linux-x86_64.tar.gz`
-- `release-assets/SHA256SUMS`
-- `release-assets/BUILDINFO.json`
-- `release-assets/glibc-requirements.json`
-- `release-assets/tls-proxy-checker-VERSION.sbom.cdx.json`
+| File | x86-64 | ARM64 |
+| --- | --- | --- |
+| Executable | `tls-proxy-checker-linux-x86_64` | `tls-proxy-checker-linux-aarch64` |
+| Archive | `tls-proxy-checker-VERSION-linux-x86_64.tar.gz` | `tls-proxy-checker-VERSION-linux-aarch64.tar.gz` |
+| Checksums | `SHA256SUMS` | `SHA256SUMS-linux-aarch64` |
+| Build metadata | `BUILDINFO.json` | `BUILDINFO-linux-aarch64.json` |
+| GLIBC report | `glibc-requirements.json` | `glibc-requirements-linux-aarch64.json` |
+| SBOM | `tls-proxy-checker-VERSION.sbom.cdx.json` | `tls-proxy-checker-VERSION-linux-aarch64.sbom.cdx.json` |
 
-Inspect the compatibility evidence directly:
+Run these commands from the repository root to check the ARM64 build.
 
 ```bash
-cat release-assets/glibc-requirements.json
-sha256sum --check release-assets/SHA256SUMS
-./release-assets/tls-proxy-checker-linux-x86_64 --version
+cat release-assets/glibc-requirements-linux-aarch64.json
+(cd release-assets && sha256sum --check SHA256SUMS-linux-aarch64)
+./release-assets/tls-proxy-checker-linux-aarch64 --version
 ```
+
+Run the executable on a Linux system with the applicable architecture.
 
 ## CI And Releases
 
-The `Linux glibc 2.17` CI job executes the same wrapper on every pull request
-and push to `main`. A signed version tag runs the release workflow with the
-same script, then smoke-tests the binary on the newer GitHub runner before
-attestation and publication.
+CI runs the build and a smoke test on a native Linux runner for each
+architecture. The release workflow verifies the signature on the version tag,
+builds each architecture, and attests its files. It verifies the checksums
+again before it publishes both builds in one GitHub release.
 
-When updating the manylinux image digest, verify that it is the current digest
-for `quay.io/pypa/manylinux2014_x86_64`, review the upstream image change, and
-let the compatibility job audit the complete generated ELF inventory before
-merging. Treat the standalone CPython URL and digest as a second pinned build
-input: update them together from the same upstream release asset.
+When you update a manylinux image digest, verify it against the upstream image
+for that architecture. Review the upstream change and check the CI audit of
+the bundled ELF files. Update each standalone CPython URL and SHA-256 digest
+together from the same upstream release asset.
